@@ -1,35 +1,23 @@
-// ── API KEY ──
-function getApiKey() {
-  return sessionStorage.getItem('anthropic_key') || '';
-}
+// ── N8N AI PROXY ──
+const AI_PROXY_URL = 'https://n8n.srv1047408.hstgr.cloud/webhook/upg-ai-proxy';
 
-function saveApiKey(key) {
-  const input = document.getElementById('api-key-input');
-  const status = document.getElementById('ai-status');
-  const dot = document.getElementById('ai-dot');
-  const text = document.getElementById('ai-status-text');
-  if (key && key.startsWith('sk-')) {
-    sessionStorage.setItem('anthropic_key', key);
-    input.classList.add('has-key');
-    status.classList.add('active');
-    text.textContent = 'AI Active';
-  } else {
-    sessionStorage.removeItem('anthropic_key');
-    input.classList.remove('has-key');
-    status.classList.remove('active');
-    text.textContent = 'No Key';
+async function callAI(systemPrompt, userMessage, maxTokens = 1000) {
+  const response = await fetch(AI_PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMessage }]
+    })
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || `API error ${response.status}`);
   }
+  return response.json();
 }
-
-// Restore key on load
-document.addEventListener('DOMContentLoaded', () => {
-  const saved = sessionStorage.getItem('anthropic_key');
-  if (saved) {
-    const input = document.getElementById('api-key-input');
-    input.value = saved;
-    saveApiKey(saved);
-  }
-});
 
 // ── QUESTION DATA ──
 const standardQuestions = [
@@ -307,30 +295,8 @@ Rules:
 - Keep follow-ups conversational
 - Return ONLY valid JSON: {"followup_questions": ["..."], "opportunity_signal": "..."}`;
 
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    followupEl.innerHTML = `<div class="ai-followup" style="border-color:#fca5a5;background:#fef2f2;"><div class="ai-followup-label" style="color:var(--red);">API Key Required</div><div class="ai-followup-content">Paste your Anthropic API key in the top bar to enable AI features.</div></div>`;
-    return;
-  }
-
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: `Question: "${originalQ}"\n\nClient response/notes: "${notes}"\n\nGenerate follow-ups and opportunity signal as JSON only.` }]
-      })
-    });
-
-    const data = await response.json();
+    const data = await callAI(systemPrompt, `Question: "${originalQ}"\n\nClient response/notes: "${notes}"\n\nGenerate follow-ups and opportunity signal as JSON only.`, 1000);
     const text = (data.content || []).map(b => b.text || '').join('');
     const clean = text.replace(/```json|```/g, '').trim();
 
@@ -531,32 +497,8 @@ ${signalsList}
 
 Generate the HTML brochure now. Return ONLY the inner HTML content — no doctype, html, head, or body tags. Use h1, h2, h3, p, strong, and the CSS classes documented above (person-block, person-name, person-role, opp-item, cta-block, brochure-sub).`;
 
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    document.getElementById('brochure-output').innerHTML = `<div class="ai-followup" style="border-color:#fca5a5;background:#fef2f2;"><div class="ai-followup-label" style="color:var(--red);">API Key Required</div><div class="ai-followup-content">Paste your Anthropic API key in the top bar to enable AI features.</div></div>`;
-    document.getElementById('btn-brochure').disabled = false;
-    document.getElementById('brochure-loading').style.display = 'none';
-    return;
-  }
-
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4000,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }]
-      })
-    });
-
-    const data = await response.json();
+    const data = await callAI(systemPrompt, userPrompt, 4000);
     const html = (data.content || []).map(b => b.text || '').join('');
     const cleanHtml = html.replace(/```html|```/g, '').trim();
 
@@ -626,7 +568,6 @@ function printBrochure() {
 const N8N_WEBHOOK_URL = 'https://n8n.srv1047408.hstgr.cloud/webhook/upg-brochure-send';
 
 async function sendViaOutlook() {
-  const apiKey = getApiKey();
   const statusEl = document.getElementById('send-status');
   const brochureHtml = document.getElementById('print-target').innerHTML;
 
@@ -684,22 +625,11 @@ async function sendViaOutlook() {
     // Extract just this person's block from the master brochure
     // We'll ask AI to generate a slim individual version
     try {
-      const individualResp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 2000,
-          system: 'You are rewriting a master brochure into a personalized individual version for ONE person. Keep the header, the "What We Heard" section, the recommended next steps, and the CTA block. But ONLY include the person-block for the specified individual — remove all other person-blocks. Return ONLY raw HTML, no markdown backticks.',
-          messages: [{ role: 'user', content: `Master brochure HTML:\n${brochureHtml}\n\nCreate an individual version for: ${person.name} (${person.role}). Keep only their person-block, remove everyone else's. Return raw HTML only.` }]
-        })
-      });
-      const data = await individualResp.json();
+      const data = await callAI(
+        'You are rewriting a master brochure into a personalized individual version for ONE person. Keep the header, the "What We Heard" section, the recommended next steps, and the CTA block. But ONLY include the person-block for the specified individual — remove all other person-blocks. Return ONLY raw HTML, no markdown backticks.',
+        `Master brochure HTML:\n${brochureHtml}\n\nCreate an individual version for: ${person.name} (${person.role}). Keep only their person-block, remove everyone else's. Return raw HTML only.`,
+        2000
+      );
       const individualHtml = (data.content || []).map(b => b.text || '').join('').replace(/```html|```/g, '').trim();
 
       statusEl.innerHTML = `<div class="ai-loading"><div class="spinner"></div> Sending to ${person.name}...</div>`;
