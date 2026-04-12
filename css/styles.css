@@ -52,6 +52,18 @@ body {
   text-transform: uppercase;
   color: var(--light);
 }
+.api-key-input {
+  padding: 5px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  width: 140px;
+  color: var(--charcoal);
+  background: var(--off-white);
+}
+.api-key-input:focus { outline: none; border-color: var(--orange); background: #fff; }
+.api-key-input.has-key { border-color: var(--green); background: var(--green-light); }
 .topbar-status {
   font-size: 11px;
   font-weight: 600;
@@ -60,6 +72,8 @@ body {
   align-items: center;
   gap: 6px;
 }
+.topbar-status.active { color: var(--green); }
+.topbar-status.active .dot { background: var(--green); }
 .topbar-status .dot {
   width: 7px; height: 7px;
   border-radius: 50%;

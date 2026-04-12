@@ -1,3 +1,36 @@
+// ── API KEY ──
+function getApiKey() {
+  return sessionStorage.getItem('anthropic_key') || '';
+}
+
+function saveApiKey(key) {
+  const input = document.getElementById('api-key-input');
+  const status = document.getElementById('ai-status');
+  const dot = document.getElementById('ai-dot');
+  const text = document.getElementById('ai-status-text');
+  if (key && key.startsWith('sk-')) {
+    sessionStorage.setItem('anthropic_key', key);
+    input.classList.add('has-key');
+    status.classList.add('active');
+    text.textContent = 'AI Active';
+  } else {
+    sessionStorage.removeItem('anthropic_key');
+    input.classList.remove('has-key');
+    status.classList.remove('active');
+    text.textContent = 'No Key';
+  }
+}
+
+// Restore key on load
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = sessionStorage.getItem('anthropic_key');
+  if (saved) {
+    const input = document.getElementById('api-key-input');
+    input.value = saved;
+    saveApiKey(saved);
+  }
+});
+
 // ── QUESTION DATA ──
 const standardQuestions = [
   {
@@ -274,10 +307,21 @@ Rules:
 - Keep follow-ups conversational
 - Return ONLY valid JSON: {"followup_questions": ["..."], "opportunity_signal": "..."}`;
 
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    followupEl.innerHTML = `<div class="ai-followup" style="border-color:#fca5a5;background:#fef2f2;"><div class="ai-followup-label" style="color:var(--red);">API Key Required</div><div class="ai-followup-content">Paste your Anthropic API key in the top bar to enable AI features.</div></div>`;
+    return;
+  }
+
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
@@ -487,10 +531,23 @@ ${signalsList}
 
 Generate the HTML brochure now. Return ONLY the inner HTML content — no doctype, html, head, or body tags. Use h1, h2, h3, p, strong, and the CSS classes documented above (person-block, person-name, person-role, opp-item, cta-block, brochure-sub).`;
 
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    document.getElementById('brochure-output').innerHTML = `<div class="ai-followup" style="border-color:#fca5a5;background:#fef2f2;"><div class="ai-followup-label" style="color:var(--red);">API Key Required</div><div class="ai-followup-content">Paste your Anthropic API key in the top bar to enable AI features.</div></div>`;
+    document.getElementById('btn-brochure').disabled = false;
+    document.getElementById('brochure-loading').style.display = 'none';
+    return;
+  }
+
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
@@ -569,6 +626,7 @@ function printBrochure() {
 const N8N_WEBHOOK_URL = 'https://n8n.srv1047408.hstgr.cloud/webhook/upg-brochure-send';
 
 async function sendViaOutlook() {
+  const apiKey = getApiKey();
   const statusEl = document.getElementById('send-status');
   const brochureHtml = document.getElementById('print-target').innerHTML;
 
@@ -628,7 +686,12 @@ async function sendViaOutlook() {
     try {
       const individualResp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 2000,
