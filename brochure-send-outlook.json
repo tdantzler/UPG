@@ -1,0 +1,129 @@
+{
+  "name": "UPG Brochure — Send via Outlook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upg-brochure-send",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "mode": "jsonToBinary",
+        "convertAllData": false,
+        "sourceProperty": "brochureHtml",
+        "binaryPropertyName": "htmlFile",
+        "options": {
+          "fileName": "UPG_Insurance_AI_Roadmap.html",
+          "mimeType": "text/html"
+        }
+      },
+      "id": "convert-html",
+      "name": "Convert HTML to File",
+      "type": "n8n-nodes-base.moveBinaryData",
+      "typeVersion": 1.1,
+      "position": [470, 300],
+      "notesInFlow": true,
+      "notes": "Takes the brochureHtml from webhook body and converts it to a binary HTML file for attachment. For PDF conversion, replace this with an HTML-to-PDF node (e.g., using Gotenberg, wkhtmltopdf, or a cloud PDF API)."
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "subject": "={{ $json.subject || 'AI & Automation Roadmap — UPG Insurance | Knowlogix' }}",
+        "bodyType": "html",
+        "htmlBody": "=<div style=\"font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #3a3a3c;\">\n<p>Hi {{ $json.recipients[0].name.split(' ')[0] }},</p>\n\n<p>{{ $json.senderNote || 'Great meeting today. As promised, here is your personalized AI & automation roadmap — generated live during our conversation.' }}</p>\n\n<p>The attached roadmap was <strong>custom-built by AI during our session</strong> — tailored specifically to your role and the workflows we discussed. This is exactly the kind of intelligent automation we can bring to UPG Insurance.</p>\n\n<p><strong>Recommended Next Step:</strong> A free 2-hour workflow audit with your team. We map where time is being lost and deliver a prioritized AI roadmap — no obligation.</p>\n\n<p>Let us know when works best.</p>\n\n<p style=\"margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e2e4;\">\n<strong style=\"color: #f1592a;\">Knowlogix</strong><br>\n843-900-4576 | <a href=\"https://knowlogix.com\">knowlogix.com</a> | info@knowlogix.com<br>\n<em style=\"color: #a0a0a3; font-size: 12px;\">Veteran-Owned · Charleston, SC</em>\n</p>\n</div>",
+        "toRecipients": "={{ $json.recipients.map(r => r.email).join(', ') }}",
+        "attachments": "htmlFile",
+        "options": {
+          "importance": "normal",
+          "saveToSentItems": true
+        }
+      },
+      "id": "send-outlook",
+      "name": "Send via Outlook",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [690, 300],
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_OUTLOOK_CREDENTIAL_ID",
+          "name": "Microsoft Outlook"
+        }
+      },
+      "notesInFlow": true,
+      "notes": "SETUP REQUIRED: 1) Add your Microsoft Outlook OAuth2 credentials in n8n Settings > Credentials. 2) Replace the credential ID above. 3) Test with your own email first before sending to clients."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, sentTo: $json.recipients.map(r => r.email), timestamp: new Date().toISOString() }) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-success",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [910, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Convert HTML to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert HTML to File": {
+      "main": [
+        [
+          {
+            "node": "Send via Outlook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send via Outlook": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "pinData": {}
+}

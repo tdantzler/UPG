@@ -1,0 +1,16 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/settings.json
+*.swp
+*.swo
+
+# Build artifacts
+node_modules/
+dist/
+
+# Environment
+.env
+.env.local
