@@ -495,7 +495,8 @@ const SYSTEM_PROMPT = `You are the UPG Insurance Benefits Assistant. You guide u
 
 === RESPONSE FORMAT ===
 
-You MUST respond in valid JSON with this structure:
+CRITICAL: Your ENTIRE response must be ONLY a single JSON object. No text before it, no text after it. No markdown code fences. ONLY the JSON object:
+
 {
   "message": "Your conversational message here. Use **bold** for emphasis. Use \\n for line breaks.",
   "choices": ["Choice 1", "Choice 2", "Choice 3"],
@@ -646,11 +647,18 @@ async function sendMessage(choiceText) {
 
     let parsed;
     try {
-      const cleaned = rawReply.replace(/```json|```/g, '').trim();
-      parsed = JSON.parse(cleaned);
+      // Try to extract JSON from anywhere in the response
+      const jsonMatch = rawReply.match(/\{[\s\S]*"message"[\s\S]*\}/);
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0]);
+      } else {
+        const cleaned = rawReply.replace(/```json|```/g, '').trim();
+        parsed = JSON.parse(cleaned);
+      }
     } catch(e) {
-      // Fallback if AI doesn't return valid JSON
-      parsed = { message: rawReply, choices: [], handoff: false, summary: '' };
+      // Fallback: strip any JSON block and show as plain text
+      const textOnly = rawReply.replace(/```json[\s\S]*?```/g, '').replace(/\{[\s\S]*"message"[\s\S]*\}/g, '').trim();
+      parsed = { message: textOnly || rawReply, choices: [], handoff: false, summary: '' };
     }
 
     // Store the raw JSON as the assistant message for conversation continuity
