@@ -220,6 +220,98 @@ body {
 }
 .msg-bubble li { margin-bottom: 4px; }
 
+/* ── CHOICE CHIPS ── */
+.choices-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  max-width: 85%;
+  animation: fadeIn 0.3s ease;
+}
+.choice-chip {
+  background: var(--upg-white);
+  border: 2px solid var(--upg-sky);
+  border-radius: 22px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--upg-blue);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Source Sans 3', sans-serif;
+}
+.choice-chip:hover {
+  background: var(--upg-blue);
+  color: #fff;
+  border-color: var(--upg-blue);
+}
+.choice-chip.selected {
+  background: var(--upg-blue);
+  color: #fff;
+  border-color: var(--upg-blue);
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* ── BOOKING CTA ── */
+.booking-cta {
+  background: linear-gradient(135deg, var(--upg-navy) 0%, var(--upg-blue) 100%);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-top: 8px;
+  max-width: 85%;
+  animation: fadeIn 0.4s ease;
+}
+.booking-cta-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.booking-cta-text {
+  font-size: 13px;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.55;
+  margin-bottom: 14px;
+}
+.booking-cta-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.btn-book {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+.btn-book.primary {
+  background: var(--upg-gold);
+  color: var(--upg-navy);
+}
+.btn-book.primary:hover { background: #d4b46a; }
+.btn-book.secondary {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+.btn-book.secondary:hover { background: rgba(255,255,255,0.25); }
+.booking-sent {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--upg-gold);
+  display: none;
+}
+
 .typing-indicator {
   display: flex;
   gap: 4px;
@@ -313,6 +405,8 @@ body {
   .welcome h1 { font-size: 22px; }
   .welcome p { font-size: 14px; }
   .msg { max-width: 92%; }
+  .choices-row { max-width: 92%; }
+  .booking-cta { max-width: 92%; }
   .quick-topics { gap: 6px; }
   .topic-chip { font-size: 12px; padding: 6px 11px; }
 }
@@ -341,14 +435,14 @@ body {
 
   <div class="welcome" id="welcome">
     <h1>How Can We Help You Today?</h1>
-    <p>Ask us anything about Medicare, ACA health plans, dental, vision, or insurance in general. We're here to make it simple.</p>
+    <p>We'll walk you through a few quick questions to point you in the right direction. No personal health information needed.</p>
     <div class="quick-topics">
-      <div class="topic-chip" onclick="askQuestion('What is the difference between Medicare Advantage and Medicare Supplement?')">Medicare Advantage vs Supplement</div>
-      <div class="topic-chip" onclick="askQuestion('When can I enroll in Medicare?')">Medicare Enrollment</div>
-      <div class="topic-chip" onclick="askQuestion('How do I know if I qualify for ACA subsidies?')">ACA Subsidies</div>
-      <div class="topic-chip" onclick="askQuestion('What is the Medicare Part D donut hole?')">Part D Donut Hole</div>
-      <div class="topic-chip" onclick="askQuestion('What does dental insurance typically cover?')">Dental Coverage</div>
-      <div class="topic-chip" onclick="askQuestion('I am turning 65 soon. What do I need to do?')">Turning 65?</div>
+      <div class="topic-chip" onclick="startGuided('medicare')">I need help with Medicare</div>
+      <div class="topic-chip" onclick="startGuided('aca')">I need an ACA / Marketplace plan</div>
+      <div class="topic-chip" onclick="startGuided('turning65')">I'm turning 65 soon</div>
+      <div class="topic-chip" onclick="startGuided('dental_vision')">Dental or Vision coverage</div>
+      <div class="topic-chip" onclick="startGuided('general')">I have a general question</div>
+      <div class="topic-chip" onclick="startGuided('switching')">I want to switch plans</div>
     </div>
   </div>
 
@@ -360,7 +454,7 @@ body {
 <div class="input-area">
   <div style="max-width:800px;margin:0 auto;padding:0 16px;">
     <div class="input-row">
-      <textarea id="user-input" placeholder="Ask about Medicare, ACA plans, coverage, enrollment..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <textarea id="user-input" placeholder="Type your answer or ask a question..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
       <button class="btn-send" id="btn-send" onclick="sendMessage()" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
@@ -377,138 +471,153 @@ body {
 </div>
 
 <script>
+// ── CONFIG ──
+const AI_PROXY_URL = 'https://n8n.srv1047408.hstgr.cloud/webhook/upg-ai-proxy';
+const SUMMARY_WEBHOOK_URL = 'https://n8n.srv1047408.hstgr.cloud/webhook/upg-chat-summary';
+const SCHEDULER_URL = 'https://www.upginsurance.com/home/scheduler';
+
 // ── STATE ──
 const conversationHistory = [];
+const summaryData = { topic: '', answers: [], recommendation: '' };
 let isGenerating = false;
+let bookingOffered = false;
 
 // ── SYSTEM PROMPT ──
-const SYSTEM_PROMPT = `You are the UPG Insurance Benefits Assistant. You ONLY answer questions using the APPROVED KNOWLEDGE BASE below. You do NOT guess, assume, speculate, or generate information beyond what is explicitly documented here.
+const SYSTEM_PROMPT = `You are the UPG Insurance Benefits Assistant. You guide users through a structured conversation to help them understand their insurance options.
+
+=== CONVERSATION STYLE ===
+
+1. Ask ONE question at a time. Keep it simple and conversational.
+2. After each question, provide 2-5 suggested answer choices when applicable.
+3. Always allow the user to type their own answer — choices are suggestions, not limits.
+4. Build on previous answers to narrow down what's relevant.
+5. Do NOT dump all information at once. Reveal information step by step based on what the user tells you.
+
+=== RESPONSE FORMAT ===
+
+You MUST respond in valid JSON with this structure:
+{
+  "message": "Your conversational message here. Use **bold** for emphasis. Use \\n for line breaks.",
+  "choices": ["Choice 1", "Choice 2", "Choice 3"],
+  "handoff": false,
+  "summary": "Brief one-line summary of what was learned this turn"
+}
+
+- "choices": array of 2-5 short answer options. Use [] (empty array) when a free-text answer is more appropriate (like asking for a county or general question).
+- "handoff": set to true when you've provided enough general guidance and the user would benefit from speaking with a licensed agent. This includes: specific plan comparisons, cost questions, enrollment assistance, eligibility determinations, or when you've walked them through the basics and next steps involve personalized advice.
+- "summary": a brief factual summary of what the user shared or what was discussed this turn (for agent handoff notes). Never include PII.
 
 === CRITICAL RULES ===
 
-1. ONLY answer from the APPROVED KNOWLEDGE BASE below. If the answer is not explicitly covered, say: "That's a great question, but I want to make sure you get accurate information. I'd recommend speaking directly with one of our licensed agents — you can call us at 843-994-2453 or schedule a free consultation at upginsurance.com."
-
-2. NEVER invent, estimate, or guess specific dollar amounts, premium costs, income thresholds, copay amounts, deductible amounts, or any numerical figures that are not explicitly listed below. Costs change annually — always direct to a UPG agent for current numbers.
-
-3. NEVER provide information about specific carrier plans, plan names, formularies, provider networks, or benefits for any specific insurance company (BlueCross, Cigna, Aetna, Humana, Ambetter, Devoted, or any other). Only discuss plan TYPES in general terms.
-
-4. NEVER provide medical advice, diagnose conditions, recommend treatments, or suggest whether someone should or shouldn't use a medical service.
-
-5. NEVER tell someone which plan to choose or recommend one plan type over another for their specific situation. Only explain what each plan type IS.
-
-6. If someone asks about a topic not in the knowledge base (taxes, legal questions, employer benefits, life insurance, auto insurance, property insurance, etc.), say: "I'm only able to help with Medicare, ACA health plans, dental, and vision insurance questions. For anything else, I'd recommend consulting the appropriate professional."
-
-7. Keep answers focused and concise. Do not over-elaborate or add information beyond what was asked.
-
-8. After answering a substantive question, include ONE brief CTA: "For personalized help, call us at 843-994-2453 or schedule a free consultation at upginsurance.com."
+1. ONLY answer from the APPROVED KNOWLEDGE BASE below. If the answer is not covered, acknowledge what you can help with and set handoff to true.
+2. NEVER invent or guess specific dollar amounts, premium costs, income thresholds, copay amounts, or deductible amounts.
+3. NEVER provide information about specific carrier plans, plan names, formularies, or provider networks.
+4. NEVER provide medical advice or recommend specific plans for a user's situation.
+5. NEVER collect or ask for: Social Security numbers, dates of birth, full names, addresses, phone numbers, email addresses, health conditions, medications, income amounts, or any personally identifiable information (PII). You may ask general questions like age range, county of residence, or type of coverage sought.
+6. Keep individual messages concise — 2-4 sentences max, then ask your next question.
+7. When handoff is true, your message should warmly invite them to speak with an agent and summarize what was discussed.
 
 === ABOUT UPG INSURANCE ===
 
 - UPG Insurance is a division of United Producers Group LLC, based in South Carolina.
 - They serve individuals and families across all 46 South Carolina counties.
-- Products offered: Medicare Advantage, Medicare Supplement (Medigap), Medicare Part D, ACA/Marketplace individual and family health plans, dental insurance, vision insurance.
-- They emphasize local, personal, face-to-face guidance.
-- Primary service areas: Charleston, Berkeley, and Dorchester counties (Lowcountry) and Greenville/Upstate regions, with statewide coverage through agent partners.
+- Products: Medicare Advantage, Medicare Supplement (Medigap), Medicare Part D, ACA/Marketplace plans, dental, vision.
+- Local, personal, face-to-face guidance — not a call center.
 - Phone: 843-994-2453
 - Website: upginsurance.com
-- Scheduling: upginsurance.com/home/scheduler
 
 === APPROVED KNOWLEDGE BASE ===
 
 MEDICARE OVERVIEW:
-- Medicare is the federal health insurance program for people 65 or older, certain younger people with disabilities, and people with End-Stage Renal Disease (ESRD) or ALS.
-- Medicare has four parts: Part A, Part B, Part C, and Part D.
+- Federal health insurance for people 65+, certain younger people with disabilities, and people with ESRD or ALS.
+- Four parts: A (hospital), B (medical), C (Medicare Advantage), D (prescriptions).
 
 MEDICARE PART A (Hospital Insurance):
-- Covers: inpatient hospital stays, skilled nursing facility care (not custodial/long-term care), hospice care, and some home health care.
-- Most people do not pay a monthly premium for Part A if they or their spouse paid Medicare taxes while working (generally 40 quarters / 10 years).
-- Part A does have deductibles and coinsurance for hospital stays.
+- Covers: inpatient hospital stays, skilled nursing facility care, hospice, some home health.
+- Most people don't pay a Part A premium if they/spouse paid Medicare taxes for 40+ quarters.
+- Has deductibles and coinsurance.
 
 MEDICARE PART B (Medical Insurance):
-- Covers: doctor visits, outpatient care, preventive services (like flu shots and screenings), durable medical equipment, ambulance services, and mental health services.
-- Part B has a monthly premium. The amount varies by income (called IRMAA — Income-Related Monthly Adjustment Amount). Contact a UPG agent for current premium amounts.
-- Part B has an annual deductible, after which Medicare typically pays 80% and the beneficiary pays 20% (no cap on the 20%).
-- Late enrollment penalty: if you don't sign up for Part B when first eligible and don't have qualifying coverage, your premium may be permanently higher.
+- Covers: doctor visits, outpatient care, preventive services, durable medical equipment.
+- Monthly premium varies by income (IRMAA). Contact UPG for current amounts.
+- Annual deductible, then Medicare pays 80%, you pay 20% (no cap).
+- Late enrollment penalty if you don't sign up when first eligible without qualifying coverage.
 
 MEDICARE PART C (Medicare Advantage):
-- Medicare Advantage plans are offered by private insurance companies approved by Medicare.
-- They provide all Part A and Part B coverage, and most include Part D (prescription drug coverage).
-- Many plans offer additional benefits not covered by Original Medicare, such as dental, vision, hearing, and fitness programs.
-- Plan types include: HMO (Health Maintenance Organization), PPO (Preferred Provider Organization), PFFS (Private Fee-for-Service), and SNP (Special Needs Plans).
-- Medicare Advantage plans have their own networks, rules, and costs that vary by plan.
-- You must have Part A and Part B to enroll in a Medicare Advantage plan.
+- Private plans approved by Medicare providing Part A + B coverage, most include Part D.
+- Many include extra benefits: dental, vision, hearing, fitness.
+- Plan types: HMO, PPO, PFFS, SNP.
+- Must have Parts A and B to enroll.
 
 MEDICARE PART D (Prescription Drug Coverage):
-- Covers prescription medications through private insurance plans approved by Medicare.
-- Part D plans have their own formulary (list of covered drugs) which varies by plan.
-- Coverage phases: deductible period, initial coverage period, coverage gap (sometimes called the "donut hole"), and catastrophic coverage.
-- The "donut hole" is a temporary gap in coverage where you may pay more for prescriptions. The gap has been shrinking over recent years.
-- Late enrollment penalty: if you go without creditable drug coverage for 63 continuous days or more, you may pay a permanent penalty.
+- Covers prescriptions through private plans.
+- Each plan has its own formulary.
+- Coverage phases: deductible, initial coverage, coverage gap ("donut hole"), catastrophic.
+- Late enrollment penalty if without creditable coverage for 63+ days.
 
 MEDICARE SUPPLEMENT (MEDIGAP):
-- Medigap plans are sold by private insurance companies to help pay costs that Original Medicare (Parts A and B) doesn't cover — such as deductibles, copayments, and coinsurance.
-- Medigap plans are standardized and labeled with letters: A, B, C, D, F, G, K, L, M, N.
-- Plan F is no longer available to people who became newly eligible for Medicare on or after January 1, 2020.
-- Plan G is generally considered the most comprehensive plan available to new Medicare beneficiaries.
-- Medigap plans do NOT include prescription drug coverage — you need a separate Part D plan.
-- You CANNOT have both a Medicare Advantage plan and a Medigap plan at the same time.
-- The best time to buy a Medigap plan is during your 6-month Medigap Open Enrollment Period, which starts the month you turn 65 AND are enrolled in Part B. During this window, insurance companies cannot deny you coverage or charge more due to health conditions.
+- Helps pay costs Original Medicare doesn't — deductibles, copays, coinsurance.
+- Standardized plans labeled A through N.
+- Plan F unavailable to those newly eligible after Jan 1, 2020. Plan G is most comprehensive for new beneficiaries.
+- Does NOT include drug coverage — need separate Part D.
+- Cannot have Medigap AND Medicare Advantage simultaneously.
+- Best time to buy: 6-month Medigap Open Enrollment starting month you turn 65 + enrolled in Part B.
 
 MEDICARE ENROLLMENT PERIODS:
-- Initial Enrollment Period (IEP): 7-month window around your 65th birthday (3 months before, your birthday month, 3 months after).
-- Annual Election Period (AEP): October 15 – December 7 each year. You can switch Medicare Advantage plans, switch from Original Medicare to Medicare Advantage (or vice versa), or join/switch/drop Part D plans. Changes take effect January 1.
-- Medicare Advantage Open Enrollment Period (OEP): January 1 – March 31 each year. If you're in a Medicare Advantage plan, you can switch to a different Medicare Advantage plan or switch back to Original Medicare (and join a Part D plan). One change allowed.
-- Special Enrollment Periods (SEPs): Available when you experience certain qualifying life events (moving, losing coverage, certain chronic conditions, etc.).
+- IEP: 7 months around 65th birthday.
+- AEP: Oct 15 – Dec 7 (changes effective Jan 1).
+- OEP: Jan 1 – Mar 31 (for current MA members, one change).
+- SEPs: qualifying life events.
 
 ACA / MARKETPLACE:
-- The Affordable Care Act (ACA) Marketplace (also called the "Exchange" or Healthcare.gov) is where individuals and families who don't have employer coverage, Medicare, or Medicaid can shop for health insurance.
-- Open Enrollment Period: typically runs from November 1 through January 15 (exact dates may vary by year and state). Check healthcare.gov or contact UPG for current dates.
-- Special Enrollment Periods: available for qualifying life events such as marriage, birth/adoption, job loss, moving to a new area, or losing other health coverage.
-- Plan metal tiers (differ in how costs are shared between you and the plan, NOT in quality of care): Bronze (lowest premiums, highest out-of-pocket costs), Silver (moderate premiums and costs), Gold (higher premiums, lower out-of-pocket costs), Platinum (highest premiums, lowest out-of-pocket costs).
-- Premium Tax Credits (subsidies): financial help to lower your monthly premium, based on household income relative to the Federal Poverty Level. Contact a UPG agent to determine eligibility and amounts.
-- Cost-Sharing Reductions (CSR): additional savings on deductibles, copays, and coinsurance — available only with Silver-level plans and only for qualifying income levels.
-- Essential Health Benefits: all Marketplace plans must cover 10 categories: ambulatory services, emergency services, hospitalization, maternity/newborn care, mental health/substance use disorder services, prescription drugs, rehabilitative services, laboratory services, preventive/wellness services, and pediatric services (including dental and vision for children).
+- For individuals/families without employer coverage, Medicare, or Medicaid.
+- Open Enrollment: typically Nov 1 – Jan 15.
+- SEPs for qualifying life events.
+- Metal tiers: Bronze, Silver, Gold, Platinum.
+- Premium Tax Credits based on income relative to Federal Poverty Level.
+- Cost-Sharing Reductions only with Silver plans at qualifying income levels.
+- All plans cover 10 Essential Health Benefits.
 
 DENTAL INSURANCE:
-- Dental plans typically cover three categories: preventive (cleanings, exams, X-rays — usually covered at the highest percentage), basic (fillings, simple extractions), and major (crowns, bridges, dentures, root canals — usually covered at the lowest percentage).
-- Most dental plans have an annual maximum — the most the plan will pay in a year.
-- Many plans have waiting periods for basic and major services.
-- Dental coverage is NOT included in Original Medicare (Parts A and B). Some Medicare Advantage plans include dental benefits.
+- Categories: preventive, basic, major. Each covered at different percentages.
+- Annual maximums. Waiting periods common for basic/major.
+- NOT included in Original Medicare. Some MA plans include dental.
 
 VISION INSURANCE:
-- Vision plans typically cover annual eye exams and provide allowances for frames, lenses, and/or contact lenses.
-- Vision coverage is NOT included in Original Medicare (Parts A and B). Some Medicare Advantage plans include vision benefits.
+- Covers annual exams, allowances for frames/lenses/contacts.
+- NOT included in Original Medicare. Some MA plans include vision.
 
-GENERAL INSURANCE TERMS:
-- Premium: the amount you pay monthly for your insurance plan.
-- Deductible: the amount you pay out-of-pocket before your insurance starts paying.
-- Copay: a fixed dollar amount you pay for a covered service.
-- Coinsurance: a percentage of costs you pay after meeting your deductible.
-- Out-of-pocket maximum: the most you pay during a plan year; after reaching this, the plan pays 100%.
-- HMO: requires a primary care physician and referrals to see specialists; typically in-network only.
-- PPO: more flexibility to see any provider; lower costs in-network, higher costs out-of-network.
-- EPO: similar to HMO but may not require referrals; still in-network only.
-- POS: combination of HMO and PPO features; need a primary care physician, but can go out-of-network at higher cost.
-- Formulary: a plan's list of covered prescription drugs.
-- Prior authorization: approval needed from the insurer before a service or medication is covered.
-- EOB (Explanation of Benefits): a document from your insurer showing what was billed, what the plan paid, and what you owe. It is NOT a bill.
+=== END OF KNOWLEDGE BASE ===
 
-=== END OF APPROVED KNOWLEDGE BASE ===
+Remember: ONE question at a time. Be warm and patient. Many users are seniors. Use plain language.`;
 
-If a question cannot be fully answered using ONLY the information above, acknowledge what you can answer, clearly state what you cannot confirm, and direct them to a UPG agent. Never fill in gaps with assumed or inferred information.
+// ── GUIDED START ──
+function startGuided(topic) {
+  document.getElementById('welcome').style.display = 'none';
+  summaryData.topic = topic;
 
-TONE: Be warm, patient, and approachable. Many users are seniors or people unfamiliar with insurance. Use plain English. Avoid jargon unless explaining what a term means.`;
+  const starters = {
+    medicare: "I need help understanding Medicare",
+    aca: "I need an ACA or Marketplace health plan",
+    turning65: "I'm turning 65 soon and need to figure out my insurance options",
+    dental_vision: "I'm looking for dental or vision coverage",
+    general: "I have a general question about health insurance",
+    switching: "I want to switch my current insurance plan"
+  };
+
+  document.getElementById('user-input').value = starters[topic] || starters.general;
+  sendMessage();
+}
 
 // ── SEND MESSAGE ──
-async function sendMessage() {
+async function sendMessage(choiceText) {
   const input = document.getElementById('user-input');
-  const text = input.value.trim();
+  const text = choiceText || input.value.trim();
   if (!text || isGenerating) return;
 
-  // Hide welcome on first message
   document.getElementById('welcome').style.display = 'none';
+  disableChoices();
 
-  // Add user message
   addMessage('user', text);
   conversationHistory.push({ role: 'user', content: text });
   input.value = '';
@@ -516,11 +625,10 @@ async function sendMessage() {
   document.getElementById('btn-send').disabled = true;
   isGenerating = true;
 
-  // Show typing indicator
   const typingId = showTyping();
 
   try {
-    const response = await fetch('https://n8n.srv1047408.hstgr.cloud/webhook/upg-ai-proxy', {
+    const response = await fetch(AI_PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -532,11 +640,41 @@ async function sendMessage() {
     });
 
     const data = await response.json();
-    const reply = (data.content || []).map(b => b.text || '').join('');
+    const rawReply = (data.content || []).map(b => b.text || '').join('');
 
     removeTyping(typingId);
-    addMessage('assistant', reply);
-    conversationHistory.push({ role: 'assistant', content: reply });
+
+    let parsed;
+    try {
+      const cleaned = rawReply.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(cleaned);
+    } catch(e) {
+      // Fallback if AI doesn't return valid JSON
+      parsed = { message: rawReply, choices: [], handoff: false, summary: '' };
+    }
+
+    // Store the raw JSON as the assistant message for conversation continuity
+    conversationHistory.push({ role: 'assistant', content: rawReply });
+
+    // Track summary
+    if (parsed.summary) {
+      summaryData.answers.push(parsed.summary);
+    }
+
+    // Render the message
+    addMessage('assistant', parsed.message);
+
+    // Render choices if any
+    if (parsed.choices && parsed.choices.length > 0) {
+      addChoices(parsed.choices);
+    }
+
+    // Show booking CTA if handoff
+    if (parsed.handoff && !bookingOffered) {
+      bookingOffered = true;
+      summaryData.recommendation = parsed.message;
+      showBookingCTA();
+    }
 
   } catch(err) {
     removeTyping(typingId);
@@ -547,24 +685,18 @@ async function sendMessage() {
   checkSendButton();
 }
 
-function askQuestion(text) {
-  document.getElementById('user-input').value = text;
-  sendMessage();
-}
-
-// ── UI HELPERS ──
+// ── UI: MESSAGES ──
 function addMessage(role, content) {
   const messagesEl = document.getElementById('messages');
-  const avatar = role === 'assistant' ? 'UPG' : '👤';
+  const avatar = role === 'assistant' ? 'UPG' : '&#128100;';
 
-  // Convert markdown-like formatting to HTML
   let html = content
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\\n/g, '\n')
     .replace(/\n- /g, '\n<li>')
     .replace(/\n\d+\. /g, '\n<li>')
     .replace(/\n/g, '<br>');
 
-  // Wrap list items
   if (html.includes('<li>')) {
     html = html.replace(/(<li>.*?)(?=<br><li>|<br><br>|$)/gs, '<ul>$1</ul>');
   }
@@ -579,6 +711,122 @@ function addMessage(role, content) {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
+// ── UI: CHOICES ──
+function addChoices(choices) {
+  const messagesEl = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'choices-row';
+  row.id = 'active-choices';
+
+  choices.forEach(choice => {
+    const chip = document.createElement('button');
+    chip.className = 'choice-chip';
+    chip.textContent = choice;
+    chip.onclick = () => selectChoice(choice, chip);
+    row.appendChild(chip);
+  });
+
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function selectChoice(text, chipEl) {
+  // Mark selected
+  chipEl.classList.add('selected');
+  disableChoices();
+  sendMessage(text);
+}
+
+function disableChoices() {
+  const active = document.getElementById('active-choices');
+  if (active) {
+    active.id = '';
+    active.querySelectorAll('.choice-chip').forEach(c => {
+      c.style.pointerEvents = 'none';
+      c.style.opacity = '0.5';
+    });
+  }
+}
+
+// ── UI: BOOKING CTA ──
+function showBookingCTA() {
+  const messagesEl = document.getElementById('messages');
+  const cta = document.createElement('div');
+  cta.className = 'booking-cta';
+  cta.innerHTML = `
+    <div class="booking-cta-title">Ready for the Next Step?</div>
+    <div class="booking-cta-text">
+      Based on our conversation, a quick call with a licensed UPG agent would help you get specific answers and find the right plan. We'll include a summary of what we discussed so you don't have to repeat anything.
+    </div>
+    <div class="booking-cta-buttons">
+      <a href="${SCHEDULER_URL}" target="_blank" class="btn-book primary" onclick="sendSummaryToAgent()">
+        &#128197; Schedule a Free Consultation
+      </a>
+      <a href="tel:843-994-2453" class="btn-book secondary">
+        &#128222; Call 843-994-2453
+      </a>
+    </div>
+    <div class="booking-sent" id="booking-sent">&#10003; Conversation summary sent to UPG team</div>
+  `;
+  messagesEl.appendChild(cta);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+// ── SUMMARY & HANDOFF ──
+function buildSummary() {
+  const topicLabels = {
+    medicare: 'Medicare',
+    aca: 'ACA / Marketplace',
+    turning65: 'Turning 65',
+    dental_vision: 'Dental & Vision',
+    general: 'General Question',
+    switching: 'Plan Switch'
+  };
+
+  let summary = `CONVERSATION SUMMARY\n`;
+  summary += `Topic: ${topicLabels[summaryData.topic] || 'General'}\n`;
+  summary += `Date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n\n`;
+  summary += `KEY DETAILS:\n`;
+  summaryData.answers.forEach((a, i) => {
+    summary += `- ${a}\n`;
+  });
+  summary += `\nFULL CONVERSATION:\n`;
+  conversationHistory.forEach(msg => {
+    const role = msg.role === 'user' ? 'Visitor' : 'AI Assistant';
+    let content = msg.content;
+    // For assistant messages, try to extract just the message text
+    try {
+      const parsed = JSON.parse(content.replace(/```json|```/g, '').trim());
+      content = parsed.message || content;
+    } catch(e) {}
+    summary += `${role}: ${content}\n\n`;
+  });
+
+  return summary;
+}
+
+async function sendSummaryToAgent() {
+  const summary = buildSummary();
+  try {
+    await fetch(SUMMARY_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        summary: summary,
+        topic: summaryData.topic,
+        answers: summaryData.answers,
+        timestamp: new Date().toISOString(),
+        source: 'UPG Benefits Chatbot'
+      })
+    });
+    const sentEl = document.getElementById('booking-sent');
+    if (sentEl) sentEl.style.display = 'block';
+  } catch(e) {
+    // Silent fail — don't block the user from booking
+  }
+}
+
+// ── UI: TYPING ──
 function showTyping() {
   const messagesEl = document.getElementById('messages');
   const id = 'typing-' + Date.now();
@@ -605,6 +853,7 @@ function removeTyping(id) {
   if (el) el.remove();
 }
 
+// ── INPUT HELPERS ──
 function handleKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
