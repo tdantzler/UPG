@@ -1,5 +1,5 @@
 // ── N8N AI PROXY ──
-const AI_PROXY_URL = 'https://n8n.srv1047408.hstgr.cloud/webhook/upg-ai-proxy';
+const AI_PROXY_URL = 'https://n8n.srv1047408.hstgr.cloud/webhook/upg-ai';
 
 async function callAI(systemPrompt, userMessage, maxTokens = 1000) {
   const response = await fetch(AI_PROXY_URL, {
