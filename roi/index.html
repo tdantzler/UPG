@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knowlogix — AI Investment ROI</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --charcoal: #3a3a3c;
+    --orange: #f1592a;
+    --orange-light: #fef0eb;
+    --orange-mid: #fcd9cc;
+    --mid: #6b6b6e;
+    --light: #a0a0a3;
+    --rule: #e2e2e4;
+    --bg: #ffffff;
+    --off-white: #f8f8f9;
+    --green: #16a34a;
+    --green-light: #f0fdf4;
+    --green-border: #bbf7d0;
+    --blue: #2563eb;
+    --blue-light: #eff6ff;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  @page { size: letter; margin: 0.45in; }
+  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    color: var(--charcoal);
+    background: var(--bg);
+    max-width: 8.5in;
+    margin: 0 auto;
+    padding: 0.45in 0.55in;
+    line-height: 1.55;
+  }
+
+  /* — HEADER — */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--charcoal);
+    margin-bottom: 16px;
+  }
+  .header-left h1 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--charcoal);
+    line-height: 1.15;
+  }
+  .header-left h1 span { color: var(--orange); }
+  .header-left .sub {
+    font-size: 11px;
+    color: var(--light);
+    margin-top: 2px;
+  }
+  .header-right {
+    text-align: right;
+    font-size: 9px;
+    color: var(--light);
+    line-height: 1.5;
+  }
+  .header-right strong { color: var(--orange); }
+
+  /* — SECTION HEADERS — */
+  .section-title {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--orange);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-top: 18px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--orange-mid);
+  }
+
+  /* — INVESTMENT TABLE — */
+  .invest-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .invest-card {
+    background: var(--off-white);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+  .invest-label {
+    font-size: 9px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--light);
+    margin-bottom: 2px;
+  }
+  .invest-amount {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--charcoal);
+  }
+  .invest-detail {
+    font-size: 10px;
+    color: var(--mid);
+    margin-top: 1px;
+  }
+  .invest-card.total {
+    background: var(--charcoal);
+    border-color: var(--charcoal);
+  }
+  .invest-card.total .invest-label { color: rgba(255,255,255,0.5); }
+  .invest-card.total .invest-amount { color: #fff; }
+  .invest-card.total .invest-detail { color: rgba(255,255,255,0.6); }
+
+  /* — ROI ROWS — */
+  .roi-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 4px;
+    margin-bottom: 4px;
+  }
+  .roi-table th {
+    font-size: 9px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--light);
+    text-align: left;
+    padding: 4px 10px;
+  }
+  .roi-table th:last-child { text-align: right; }
+  .roi-table td {
+    background: var(--off-white);
+    padding: 9px 12px;
+    font-size: 11px;
+    color: var(--charcoal);
+    line-height: 1.45;
+  }
+  .roi-table td:first-child {
+    border-radius: 6px 0 0 6px;
+    font-weight: 600;
+  }
+  .roi-table td:last-child {
+    border-radius: 0 6px 6px 0;
+    text-align: right;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--green);
+    white-space: nowrap;
+  }
+  .roi-table td.desc {
+    font-weight: 400;
+    color: var(--mid);
+    font-size: 10px;
+  }
+
+  /* — BOTTOM LINE — */
+  .bottom-line {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .bl-card {
+    flex: 1;
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .bl-card.invest {
+    background: var(--off-white);
+    border: 1px solid var(--rule);
+  }
+  .bl-card.return {
+    background: var(--green-light);
+    border: 2px solid var(--green-border);
+  }
+  .bl-card.net {
+    background: var(--charcoal);
+  }
+  .bl-label {
+    font-size: 9px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 2px;
+  }
+  .bl-card.invest .bl-label { color: var(--light); }
+  .bl-card.return .bl-label { color: var(--green); }
+  .bl-card.net .bl-label { color: rgba(255,255,255,0.5); }
+  .bl-amount {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+  }
+  .bl-card.invest .bl-amount { color: var(--charcoal); }
+  .bl-card.return .bl-amount { color: var(--green); }
+  .bl-card.net .bl-amount { color: var(--orange); }
+  .bl-sub {
+    font-size: 9px;
+    margin-top: 2px;
+  }
+  .bl-card.invest .bl-sub { color: var(--light); }
+  .bl-card.return .bl-sub { color: #15803d; }
+  .bl-card.net .bl-sub { color: rgba(255,255,255,0.6); }
+
+  /* — WHAT'S INCLUDED — */
+  .included-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .included-item {
+    background: var(--off-white);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+  .included-title {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    color: var(--charcoal);
+    margin-bottom: 2px;
+  }
+  .included-desc {
+    font-size: 9px;
+    color: var(--mid);
+    line-height: 1.4;
+  }
+
+  /* — COMPARISON — */
+  .compare {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .compare-card {
+    flex: 1;
+    border-radius: 8px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .compare-card.them {
+    background: var(--off-white);
+    border: 1px solid var(--rule);
+  }
+  .compare-card.us {
+    background: var(--orange-light);
+    border: 2px solid var(--orange);
+  }
+  .compare-label {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .compare-card.them .compare-label { color: var(--light); }
+  .compare-card.us .compare-label { color: var(--orange); }
+  .compare-amount {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    color: var(--charcoal);
+  }
+  .compare-desc {
+    font-size: 9px;
+    color: var(--mid);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+
+  /* — CTA — */
+  .cta {
+    background: var(--orange);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-top: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .cta h3 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    color: #fff;
+  }
+  .cta p {
+    font-size: 10px;
+    color: rgba(255,255,255,0.85);
+    margin-top: 1px;
+  }
+  .cta-right {
+    text-align: right;
+    color: #fff;
+    font-size: 10px;
+    line-height: 1.5;
+  }
+  .cta-right strong { font-size: 12px; }
+
+  .footer {
+    margin-top: 10px;
+    font-size: 8px;
+    color: var(--light);
+    text-align: center;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>Return on <span>AI Investment</span></h1>
+    <div class="sub">What your AI partnership delivers — in real terms</div>
+  </div>
+  <div class="header-right">
+    <strong>Knowlogix</strong><br>
+    843-900-4576 | knowlogix.com
+  </div>
+</div>
+
+<!-- YOUR INVESTMENT -->
+<div class="section-title">Your investment</div>
+<div class="invest-grid">
+  <div class="invest-card">
+    <div class="invest-label">Assessment (BGRA)</div>
+    <div class="invest-amount">$750 – $1,000</div>
+    <div class="invest-detail">One-time · credited toward engagement</div>
+  </div>
+  <div class="invest-card">
+    <div class="invest-label">Onboarding & initial build</div>
+    <div class="invest-amount">$2,500 – $5,000</div>
+    <div class="invest-detail">One-time · infrastructure + first tools</div>
+  </div>
+  <div class="invest-card">
+    <div class="invest-label">Monthly retainer</div>
+    <div class="invest-amount">$2,500/mo</div>
+    <div class="invest-detail">12-month minimum · your AI department</div>
+  </div>
+  <div class="invest-card total">
+    <div class="invest-label">Year 1 total investment</div>
+    <div class="invest-amount">~$33,750</div>
+    <div class="invest-detail">Onboarding + 12 months of retainer</div>
+  </div>
+</div>
+
+<!-- MONTHLY RETURN -->
+<div class="section-title">What you get back — every month</div>
+<table class="roi-table">
+  <tr>
+    <th>Automation</th>
+    <th>How</th>
+    <th>Monthly value</th>
+  </tr>
+  <tr>
+    <td>Plan comparison automation</td>
+    <td class="desc">AI generates Medicare/ACA side-by-sides across carriers in seconds instead of hours. 35 min saved per comparison × 8/week × agents</td>
+    <td>$1,800 – $2,800</td>
+  </tr>
+  <tr>
+    <td>Member Q&A chatbot</td>
+    <td class="desc">AI answers "what does my plan cover?" questions 24/7 — deflects 60%+ of routine calls. Agents focus on consultations, not FAQs</td>
+    <td>$300 – $600</td>
+  </tr>
+  <tr>
+    <td>Lead conversion</td>
+    <td class="desc">Website chatbot qualifies leads, books consultations automatically. Even 2 additional clients/month at $300–$500/yr commission each</td>
+    <td>$600 – $1,000</td>
+  </tr>
+  <tr>
+    <td>AEP capacity</td>
+    <td class="desc">Automated reminders, pre-populated reviews, self-scheduling — each agent handles 20–30% more clients without seasonal hires</td>
+    <td>$300 – $500</td>
+  </tr>
+  <tr>
+    <td>Compliance automation</td>
+    <td class="desc">SOA tracking, scope of appointment docs, marketing compliance — automated monitoring prevents costly CMS violations</td>
+    <td style="color:var(--blue);font-size:11px;">Risk avoidance</td>
+  </tr>
+</table>
+
+<!-- BOTTOM LINE -->
+<div class="section-title">The bottom line</div>
+<div class="bottom-line">
+  <div class="bl-card invest">
+    <div class="bl-label">Monthly investment</div>
+    <div class="bl-amount">$2,500</div>
+    <div class="bl-sub">Fixed, predictable cost</div>
+  </div>
+  <div class="bl-card return">
+    <div class="bl-label">Monthly return (conservative)</div>
+    <div class="bl-amount">$3,000 – $4,900</div>
+    <div class="bl-sub">Time savings + new revenue</div>
+  </div>
+  <div class="bl-card net">
+    <div class="bl-label">Net monthly ROI</div>
+    <div class="bl-amount">1.2x – 2x</div>
+    <div class="bl-sub">Retainer pays for itself</div>
+  </div>
+</div>
+
+<!-- WHAT'S INCLUDED -->
+<div class="section-title">What's included in the retainer</div>
+<div class="included-grid">
+  <div class="included-item">
+    <div class="included-title">Custom architecture</div>
+    <div class="included-desc">Every tool built specifically for your workflows, carriers, and processes. Not a template.</div>
+  </div>
+  <div class="included-item">
+    <div class="included-title">Hosting & infrastructure</div>
+    <div class="included-desc">Servers, APIs, webhook pipelines, website integrations — all managed for you.</div>
+  </div>
+  <div class="included-item">
+    <div class="included-title">AI training & updates</div>
+    <div class="included-desc">Knowledge bases updated when plans change, carriers shift, or regulations evolve.</div>
+  </div>
+  <div class="included-item">
+    <div class="included-title">Testing & QA</div>
+    <div class="included-desc">Every change tested before it goes live. Every workflow monitored for errors.</div>
+  </div>
+  <div class="included-item">
+    <div class="included-title">Strategic consulting</div>
+    <div class="included-desc">Quarterly reviews identifying new opportunities and planning next-quarter builds.</div>
+  </div>
+  <div class="included-item">
+    <div class="included-title">Priority support</div>
+    <div class="included-desc">When something breaks during AEP, it gets fixed that day. Not a ticket queue.</div>
+  </div>
+</div>
+
+<!-- THE ALTERNATIVE -->
+<div class="section-title">The alternative</div>
+<div class="compare">
+  <div class="compare-card them">
+    <div class="compare-label">Hire a developer</div>
+    <div class="compare-amount">$75,000+/yr</div>
+    <div class="compare-desc">If you can find one. Plus onboarding, benefits, management overhead. They build tools — they don't understand insurance.</div>
+  </div>
+  <div class="compare-card them">
+    <div class="compare-label">SaaS subscriptions</div>
+    <div class="compare-amount">$500 – $2,000/mo</div>
+    <div class="compare-desc">Generic tools built for everyone. No customization. No integration. No one to call when it breaks. You do the work.</div>
+  </div>
+  <div class="compare-card us">
+    <div class="compare-label">Knowlogix retainer</div>
+    <div class="compare-amount">$2,500/mo</div>
+    <div class="compare-desc">Custom-built AI tools, maintained and optimized. We understand your business. We're a phone call away. Your AI department.</div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta">
+  <div>
+    <h3>The retainer replaces a hire you can't find — at a third of the cost.</h3>
+    <p>And unlike an employee, we come with the tools already built.</p>
+  </div>
+  <div class="cta-right">
+    <strong>knowlogix.com</strong><br>
+    843-900-4576
+  </div>
+</div>
+
+<div class="footer">
+  &copy; 2026 Knowlogix LLC &middot; Charleston, SC &middot; All ROI projections are estimates based on typical insurance agency operations. Actual results vary by team size, volume, and workflow complexity.
+</div>
+
+</body>
+</html>
