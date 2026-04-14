@@ -1,0 +1,91 @@
+{
+  "name": "Knowlogix — Questionnaire to Proposal Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "knowlogix-questionnaire",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      },
+      "name": "Receive Questionnaire",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "REPLACE_WITH_YOUR_ANTHROPIC_API_KEY" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 4000, system: `You are a proposal generator for Knowlogix, an AI and workflow automation company in Charleston SC run by Trae Dantzler. You will receive questionnaire answers from Tim and Jennifer Dasinger. Tim runs UPG Insurance (Medicare/ACA individual insurance). Jennifer runs a Goosehead Insurance franchise (personal lines P&C). They share an office and expenses as a married couple.\n\nBased on their answers, generate a customized HTML proposal email with INLINE STYLES (no CSS classes). The proposal should:\n1. Reference their specific answers naturally\n2. Address any concerns or blockers they raised\n3. Confirm the $500/month retainer with tool savings offset ($137 GHL + phone services = ~$200/mo savings, net new cost ~$300/mo)\n4. Include a 90-day timeline customized to their answers\n5. Note items that need follow-up or verification\n6. Acknowledge billing flexibility (one invoice or separate)\n\nUse colors: charcoal #3a3a3c, orange #f1592a. Font: Segoe UI, Arial, sans-serif.\nHeader: AI & Automation Proposal - Tim & Jennifer Dasinger\nEnd with: Trae Dantzler, Knowlogix, 843-900-4576, tdantzler@knowlogix.com\n\nReturn ONLY the HTML. No markdown, no backticks, no explanation.`, messages: [{ role: 'user', content: 'Generate a customized proposal based on these questionnaire answers:\\n\\n' + JSON.stringify($json.body.answers, null, 2) }] }) }}",
+        "options": { "timeout": 120000 }
+      },
+      "name": "Generate Proposal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "prop",
+              "name": "proposalHtml",
+              "value": "={{ $json.content[0].text }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "Extract HTML",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "toRecipients": "tdantzler@knowlogix.com",
+        "subject": "REVIEW: Proposal for Tim & Jennifer Dasinger",
+        "bodyContent": "={{ '<div style=\"font-family:Segoe UI,Arial,sans-serif;max-width:700px;margin:0 auto;\">' + '<div style=\"background:#3a3a3c;color:#fff;padding:20px 24px;border-radius:10px 10px 0 0;\">' + '<h2 style=\"margin:0;font-size:18px;\">Proposal Ready for Your Review</h2>' + '<p style=\"margin:4px 0 0;font-size:13px;color:rgba(255,255,255,0.7);\">Tim & Jennifer Dasinger | Generated from questionnaire</p></div>' + '<div style=\"background:#fff;border:1px solid #e2e2e4;border-top:none;padding:24px;\">' + '<p style=\"font-size:14px;color:#6b6b6e;margin-bottom:16px;\">The questionnaire has been submitted and a customized proposal was generated. Review below, then approve or edit.</p>' + '<div style=\"margin-bottom:24px;\">' + '<a href=\"https://n8n.srv1047408.hstgr.cloud/webhook/knowlogix-approve-proposal\" style=\"display:inline-block;background:#16a34a;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;margin-right:12px;\">Approve & Send</a>' + '<a href=\"https://claude.ai\" style=\"display:inline-block;background:#2563eb;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;\">Edit in Claude</a></div>' + '<div style=\"border-top:2px solid #f1592a;padding-top:20px;\">' + '<p style=\"font-size:11px;color:#a0a0a3;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;font-weight:700;\">PROPOSAL PREVIEW</p>' + $json.proposalHtml + '</div></div>' + '<div style=\"background:#f8f8f9;border:1px solid #e2e2e4;border-top:none;padding:12px 24px;border-radius:0 0 10px 10px;text-align:center;\">' + '<p style=\"font-size:11px;color:#a0a0a3;\">Knowlogix Proposal Pipeline</p></div></div>' }}",
+        "additionalFields": { "bodyContentType": "html" }
+      },
+      "name": "Send Review Email",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [940, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, message: 'Received' }) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }]
+          }
+        }
+      },
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1160, 300]
+    }
+  ],
+  "connections": {
+    "Receive Questionnaire": { "main": [[{ "node": "Generate Proposal", "type": "main", "index": 0 }]] },
+    "Generate Proposal": { "main": [[{ "node": "Extract HTML", "type": "main", "index": 0 }]] },
+    "Extract HTML": { "main": [[{ "node": "Send Review Email", "type": "main", "index": 0 }]] },
+    "Send Review Email": { "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

@@ -1,0 +1,50 @@
+{
+  "name": "Knowlogix — Proposal Approve & Send",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "knowlogix-approve-proposal",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      },
+      "name": "Approve Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "toRecipients": "tdasinger@upgbenefits.com",
+        "subject": "Your AI & Automation Proposal from Knowlogix",
+        "bodyContent": "={{ '<div style=\"font-family:Segoe UI,Arial,sans-serif;max-width:640px;margin:0 auto;\">' + '<div style=\"background:#3a3a3c;padding:24px;border-radius:10px 10px 0 0;\">' + '<h1 style=\"margin:0;color:#fff;font-size:20px;\">Knowlogix</h1>' + '<p style=\"margin:4px 0 0;color:#f1592a;font-size:13px;\">AI & Workflow Automation</p></div>' + '<div style=\"background:#fff;border:1px solid #e2e2e4;border-top:none;padding:28px;\">' + '<h2 style=\"color:#3a3a3c;font-size:22px;margin-top:0;\">AI & Automation Proposal</h2>' + '<p style=\"color:#6b6b6e;font-size:14px;line-height:1.7;\">Tim and Jennifer,</p>' + '<p style=\"color:#6b6b6e;font-size:14px;line-height:1.7;\">Thank you for taking the time to complete the questionnaire. Based on your answers, we have prepared a customized proposal for your review. Please find the details in the attached document, or feel free to call us to walk through it together.</p>' + '<p style=\"color:#6b6b6e;font-size:14px;line-height:1.7;margin-top:16px;\">We are ready to get started as soon as you are.</p>' + '<div style=\"margin-top:24px;padding-top:20px;border-top:2px solid #f1592a;\">' + '<p style=\"color:#3a3a3c;font-weight:700;margin:0;\">Trae Dantzler</p>' + '<p style=\"color:#6b6b6e;font-size:13px;margin:4px 0 0;\">Knowlogix | 843-900-4576 | tdantzler@knowlogix.com</p></div>' + '</div></div>' }}",
+        "additionalFields": { "bodyContentType": "html" }
+      },
+      "name": "Send to Client",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ '<html><body style=\"font-family:Segoe UI,Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f8f8f9;\"><div style=\"text-align:center;padding:40px;\"><h1 style=\"color:#16a34a;font-size:28px;\">Proposal Sent!</h1><p style=\"color:#6b6b6e;font-size:15px;\">The proposal has been emailed to Tim & Jennifer Dasinger at tdasinger@upgbenefits.com.</p><p style=\"color:#a0a0a3;font-size:13px;margin-top:20px;\">You can close this tab.</p></div></body></html>' }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "text/html" }]
+          }
+        }
+      },
+      "name": "Confirm Page",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [720, 300]
+    }
+  ],
+  "connections": {
+    "Approve Webhook": { "main": [[{ "node": "Send to Client", "type": "main", "index": 0 }]] },
+    "Send to Client": { "main": [[{ "node": "Confirm Page", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}
